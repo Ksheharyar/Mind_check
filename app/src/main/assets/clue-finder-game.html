@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mind Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            overflow-y: auto;
+        }
+        .game-container-full {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .game-title {
+            font-family: 'Special Elite', cursive;
+        }
+        .menu-button {
+            background-color: #374151;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .menu-button:hover {
+            background-color: #4b5563;
+        }
+        .game-scene {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 60vh;
+            max-height: 500px;
+            background-color: #f0f0f0;
+            border-radius: 0.75rem;
+            border: 4px solid #374151;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+        .scene-object {
+            position: absolute;
+            cursor: pointer;
+            font-size: 2.2rem;
+            transition: transform 0.2s ease-in-out, filter 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .scene-object:hover {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 10px rgba(255, 255, 0, 0.9));
+        }
+        .inventory-item {
+            cursor: pointer;
+            font-size: 3rem;
+            transition: transform 0.2s ease, background-color 0.2s;
+        }
+        .inventory-item.selected {
+            transform: scale(1.1);
+            background-color: rgba(251, 191, 36, 0.4);
+            border-radius: 10px;
+        }
+        .message-box {
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+<!-- Main Menu Screen -->
+<div id="main-menu" class="game-container-full bg-gray-100">
+    <h1 class="text-6xl md:text-8xl font-bold game-title text-gray-700 mb-12 text-center">Mind Check <span class="text-5xl md:text-7xl">🧠</span></h1>
+    <div class="space-y-6 flex flex-col items-center">
+        <button id="play-button" class="menu-button w-64 text-2xl font-bold py-3 px-6 rounded-lg">Play</button>
+        <button id="options-button" class="menu-button w-64 text-2xl font-bold py-3 px-6 rounded-lg">Options</button>
+        <button id="level-select-button" class="menu-button w-64 text-2xl font-bold py-3 px-6 rounded-lg">Level Select</button>
+        <button id="exit-button" class="menu-button w-64 text-2xl font-bold py-3 px-6 rounded-lg">Exit</button>
+    </div>
+</div>
+
+<!-- Options Screen -->
+<div id="options-screen" class="hidden game-container-full bg-gray-100 p-8">
+    <h2 class="text-5xl font-bold game-title text-gray-700 mb-10">Options</h2>
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md border">
+        <h3 class="text-2xl text-gray-700 font-semibold mb-4">Audio</h3>
+        <div class="flex items-center justify-between">
+            <span class="text-lg font-medium">Volume</span>
+            <div class="flex items-center gap-4">
+                <button id="volume-down" class="menu-button w-12 h-12 text-2xl rounded-full">-</button>
+                <span id="volume-display" class="text-2xl font-bold w-16 text-center">10</span>
+                <button id="volume-up" class="menu-button w-12 h-12 text-2xl rounded-full">+</button>
+            </div>
+        </div>
+    </div>
+    <button id="back-button" class="menu-button mt-12 w-64 text-2xl font-bold py-3 px-6 rounded-lg">Back</button>
+</div>
+
+<!-- Level Select Screen -->
+<div id="level-select-screen" class="hidden game-container-full bg-gray-100 p-8">
+    <h2 class="text-5xl font-bold game-title text-gray-700 mb-10">Select Level</h2>
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl border">
+        <div id="level-grid" class="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-3">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+    <button id="level-select-back-button" class="menu-button mt-12 w-64 text-2xl font-bold py-3 px-6 rounded-lg">Back</button>
+</div>
+
+<!-- Game Screen -->
+<div id="game-container" class="hidden w-full max-w-4xl mx-auto p-4 flex-col justify-center min-h-screen">
+    <header class="relative text-center mb-4 h-16 flex items-center justify-center">
+        <!-- HAMBURGER MENU ICON -->
+        <button id="main-menu-button" class="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-gray-200">
+            <svg class="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <div>
+            <h1 class="text-4xl font-bold game-title text-gray-700">Mind Check <span class="text-3xl">🧠</span></h1>
+            <p class="text-lg text-gray-500">Level <span id="level-display">1</span> of 50</p>
+        </div>
+    </header>
+
+    <main class="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-200">
+        <div id="scenario-container" class="mb-4 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h2 class="text-xl sm:text-2xl font-semibold text-gray-700">Objective:</h2>
+            <p id="scenario-text" class="text-gray-600 mt-2 text-base sm:text-lg"></p>
+        </div>
+        <div id="game-scene" class="game-scene mx-auto"></div>
+        <div class="mt-4">
+            <h3 class="text-xl font-semibold text-center mb-2 text-gray-700">Inventory</h3>
+            <div id="inventory-box" class="flex items-center justify-center gap-4 bg-gray-200 p-3 rounded-lg min-h-[80px] border border-gray-300">
+                <p id="empty-inventory-text" class="text-gray-500">Empty</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Message Modal -->
+<div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+    <div class="message-box bg-white rounded-lg shadow-2xl p-6 sm:p-8 text-center max-w-sm w-full">
+        <p id="message-text" class="text-lg mb-6"></p>
+        <button id="message-button" class="menu-button w-full font-bold py-2 px-6 rounded-lg">Continue</button>
+    </div>
+</div>
+
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM ELEMENTS ---
+            const mainMenu = document.getElementById('main-menu');
+            const optionsScreen = document.getElementById('options-screen');
+            const levelSelectScreen = document.getElementById('level-select-screen');
+            const gameContainer = document.getElementById('game-container');
+            const playButton = document.getElementById('play-button');
+            const optionsButton = document.getElementById('options-button');
+            const levelSelectButton = document.getElementById('level-select-button');
+            const exitButton = document.getElementById('exit-button');
+            const backButton = document.getElementById('back-button');
+            const levelSelectBackButton = document.getElementById('level-select-back-button');
+            const mainMenuButton = document.getElementById('main-menu-button');
+            const levelGrid = document.getElementById('level-grid');
+            const volumeUp = document.getElementById('volume-up');
+            const volumeDown = document.getElementById('volume-down');
+            const volumeDisplay = document.getElementById('volume-display');
+            const levelDisplay = document.getElementById('level-display');
+            const scenarioText = document.getElementById('scenario-text');
+            const gameScene = document.getElementById('game-scene');
+            const inventoryBox = document.getElementById('inventory-box');
+            const messageModal = document.getElementById('message-modal');
+            const messageText = document.getElementById('message-text');
+            let messageButton = document.getElementById('message-button');
+
+            // --- GAME DATA ---
+            const motivationalMessages = [
+                "Brilliant!", "Outstanding!", "You're a natural!", "Incredible work!", "Masterfully done!",
+                "Excellent!", "Superb!", "Fantastic!", "Keep it up!", "Amazing!"
+            ];
+
+            const gameData = {
+                levels: [
+                    { id: 1, scenario: "You're a prisoner. Find a way to unlock the cell door.", clue: { name: 'key', emoji: '🔑' }, target: { name: 'door', emoji: '🚪' }, objects: [{ emoji: '🛏️', name: 'bed', x: 20, y: 70 }, { emoji: '🧱', name: 'loose brick', x: 85, y: 40, clue: true }, {emoji: '🐀', name: 'rat', x: 10, y: 85}] },
+                    { id: 2, scenario: "A woodcutter needs to chop a tree. Find the right tool.", clue: { name: 'axe', emoji: '🪓' }, target: { name: 'tree', emoji: '🌳' }, objects: [{ emoji: '🪵', name: 'log pile', x: 15, y: 75, clue: true }, { emoji: '🍄', name: 'mushroom', x: 80, y: 80 }, {emoji: '🐦', name: 'bird', x: 60, y: 20}] },
+                    { id: 3, scenario: "A mechanic must repair a bike. What does he need?", clue: { name: 'wrench', emoji: '🔧' }, target: { name: 'bike', emoji: '🚲' }, objects: [{ emoji: '🧰', name: 'toolbox', x: 70, y: 65, clue: true }, { emoji: '🔩', name: 'bolt', x: 25, y: 85 }, { emoji: '🛢️', name: 'oil can', x: 10, y: 60}] },
+                    { id: 4, scenario: "A chef needs to cook a steak. Find the frying pan.", clue: { name: 'pan', emoji: '🍳' }, target: { name: 'stove', emoji: '🔥' }, objects: [{ emoji: '🗄️', name: 'cupboards', x: 10, y: 40, clue: true }, { emoji: '🧅', name: 'onion', x: 60, y: 80 }, { emoji: '🍽️', name: 'plate', x: 80, y: 70}] },
+                    { id: 5, scenario: "A painter needs to finish a masterpiece. Find the paintbrush.", clue: { name: 'paintbrush', emoji: '🖌️' }, target: { name: 'canvas', emoji: '🖼️' }, objects: [{ emoji: '🏺', name: 'jar of brushes', x: 80, y: 65, clue: true }, { emoji: '🎨', name: 'paint palette', x: 20, y: 80 }, { emoji: '🪑', name: 'stool', x: 40, y: 75}] },
+                    { id: 6, scenario: "A gardener needs to water a flower. Find the watering can.", clue: { name: 'watering can', emoji: '🚰' }, target: { name: 'flower', emoji: '🌸' }, objects: [{ emoji: '🏚️', name: 'shed', x: 15, y: 60, clue: true }, { emoji: '🗿', name: 'gnome', x: 70, y: 80 }, { emoji: '🧹', name: 'rake', x: 85, y: 65 }] },
+                    { id: 7, scenario: "A writer has an idea. Find a pen to write it down.", clue: { name: 'pen', emoji: '✒️' }, target: { name: 'notebook', emoji: '📓' }, objects: [{ emoji: '🗄️', name: 'desk drawer', x: 25, y: 80, clue: true }, { emoji: '💡', name: 'lamp', x: 75, y: 40 }, { emoji: '📚', name: 'book', x: 50, y: 60 }] },
+                    { id: 8, scenario: "A detective needs to examine fingerprints. Find the magnifying glass.", clue: { name: 'magnifying glass', emoji: '🔎' }, target: { name: 'fingerprints', emoji: '🖐️' }, objects: [{ emoji: '🗂️', name: 'file cabinet', x: 80, y: 50, clue: true }, { emoji: '🚬', name: 'ashtray', x: 15, y: 85 }, { emoji: '🗞️', name: 'newspaper', x: 40, y: 75 }] },
+                    { id: 9, scenario: "A musician wants to play a song. Find the guitar.", clue: { name: 'guitar', emoji: '🎸' }, target: { name: 'amp', emoji: '🔊' }, objects: [{ emoji: '💼', name: 'guitar case', x: 20, y: 70, clue: true }, { emoji: '🎤', name: 'microphone', x: 60, y: 60 }, { emoji: '🎶', name: 'sheet music', x: 85, y: 80 }] },
+                    { id: 10, scenario: "A thirsty person needs a drink. Find the water bottle.", clue: { name: 'water bottle', emoji: '💧' }, target: { name: 'person', emoji: '🧍' }, objects: [{ emoji: '🎒', name: 'backpack', x: 70, y: 65, clue: true }, { emoji: '🥪', name: 'sandwich', x: 25, y: 85 }, { emoji: '🍎', name: 'apple', x: 10, y: 60 }] },
+                    { id: 11, scenario: "An astronaut needs a helmet to walk on the moon.", clue: { name: 'helmet', emoji: '🧑‍🚀' }, target: { name: 'spacesuit', emoji: '👩‍🚀' }, objects: [{ emoji: '🛅', name: 'locker', x: 15, y: 50, clue: true }, { emoji: '🎛️', name: 'panel', x: 50, y: 80 }, { emoji: '🛢️', name: 'tank', x: 80, y: 60 }, { emoji: '👢', name: 'boots', x: 30, y: 85 }] },
+                    { id: 12, scenario: "A pirate needs to find his treasure. Find the map.", clue: { name: 'map', emoji: '🗺️' }, target: { name: 'X', emoji: '❌' }, objects: [{ emoji: '🍾', name: 'bottle', x: 80, y: 80, clue: true }, { emoji: '💀', name: 'skull', x: 20, y: 75 }, { emoji: '⚓', name: 'anchor', x: 40, y: 40 }, { emoji: '🦜', name: 'parrot', x: 60, y: 20 }] },
+                    { id: 13, scenario: "A scientist needs to mix chemicals. Find the beaker.", clue: { name: 'beaker', emoji: '🧪' }, target: { name: 'burner', emoji: '🔥' }, objects: [{ emoji: '🗄️', name: 'cabinet', x: 85, y: 40, clue: true }, { emoji: '🔬', name: 'microscope', x: 15, y: 65 }, { emoji: '📋', name: 'clipboard', x: 45, y: 80 }, { emoji: '🥽', name: 'goggles', x: 65, y: 55 }] },
+                    { id: 14, scenario: "A camper needs to start a fire. Find the matches.", clue: { name: 'matches', emoji: '🔥' }, target: { name: 'firewood', emoji: '🪵' }, objects: [{ emoji: '⛺', name: 'tent', x: 25, y: 60, clue: true }, { emoji: '🛌', name: 'bag', x: 60, y: 80 }, { emoji: '🏮', name: 'lantern', x: 80, y: 50 }, { emoji: '🍡', name: 'stick', x: 10, y: 85 }] },
+                    { id: 15, scenario: "A hacker needs the password from a sticky note to access the mainframe.", clue: { name: 'password', emoji: '📝' }, target: { name: 'computer', emoji: '💻' }, objects: [{ emoji: '🖥️', name: 'monitor', x: 40, y: 50, clue: true }, { emoji: '☕', name: 'coffee mug', x: 70, y: 65 }, { emoji: '🍕', name: 'pizza box', x: 15, y: 80}, {emoji: '🎧', name: 'headphones', x: 85, y: 55}] },
+                    { id: 16, scenario: "A tailor needs to sew a button. Find the needle.", clue: { name: 'needle', emoji: '🪡' }, target: { name: 'shirt', emoji: '👕' }, objects: [{ emoji: '📌', name: 'pincushion', x: 80, y: 70, clue: true }, { emoji: '🧵', name: 'thread', x: 20, y: 80 }, { emoji: '✂️', name: 'scissors', x: 50, y: 50 }, { emoji: '📏', name: 'measure', x: 10, y: 50 }] },
+                    { id: 17, scenario: "A photographer needs to take a picture. Find the camera lens.", clue: { name: 'lens', emoji: '📷' }, target: { name: 'camera body', emoji: '📸' }, objects: [{ emoji: '👜', name: 'bag', x: 15, y: 70, clue: true }, { emoji: '🎥', name: 'tripod', x: 75, y: 60 }, { emoji: '📸', name: 'flash', x: 45, y: 45 }, { emoji: '🖼️', name: 'photo', x: 50, y: 85 }] },
+                    { id: 18, scenario: "A wizard needs to cast a spell. Find the magic wand.", clue: { name: 'wand', emoji: '🪄' }, target: { name: 'cauldron', emoji: '⚗️' }, objects: [{ emoji: '📖', name: 'spellbook', x: 70, y: 75, clue: true }, { emoji: '🔮', name: 'ball', x: 25, y: 60 }, { emoji: '🧪', name: 'potion', x: 50, y: 80 }, { emoji: '🦉', name: 'owl', x: 40, y: 25 }] },
+                    { id: 19, scenario: "A construction worker needs to drill a hole. Find the drill bit.", clue: { name: 'drill bit', emoji: '🔩' }, target: { name: 'wall', emoji: '🧱' }, objects: [{ emoji: '🧰', name: 'toolbox', x: 20, y: 80, clue: true }, { emoji: '🔨', name: 'hammer', x: 60, y: 70 }, { emoji: '⛑️', name: 'hat', x: 85, y: 50 }, { emoji: '🪚', name: 'saw', x: 40, y: 60 }] },
+                    { id: 20, scenario: "A mail carrier needs to deliver a package. Find the correct address.", clue: { name: 'address', emoji: '📫' }, target: { name: 'package', emoji: '📦' }, objects: [{ emoji: '🚚', name: 'truck', x: 30, y: 65, clue: true }, { emoji: '✉️', name: 'letter', x: 70, y: 80 }, { emoji: '🐕', name: 'dog', x: 85, y: 75 }, { emoji: '📫', name: 'mailbox', x: 10, y: 70 }] },
+                    { id: 21, scenario: "A spy needs to open a safe. Find the stethoscope.", clue: { name: 'stethoscope', emoji: '🩺' }, target: { name: 'safe', emoji: '🔒' }, objects: [{ emoji: '💼', name: 'briefcase', x: 75, y: 70, clue: true }, { emoji: '🕶️', name: 'sunglasses', x: 20, y: 60 }, { emoji: '🧥', name: 'coat', x: 45, y: 50 }, { emoji: '📱', name: 'phone', x: 15, y: 80 }] },
+                    { id: 22, scenario: "A student needs to solve a math problem. Find the calculator.", clue: { name: 'calculator', emoji: '🧮' }, target: { name: 'blackboard', emoji: '🖼️' }, objects: [{ emoji: '🎒', name: 'backpack', x: 80, y: 75, clue: true }, { emoji: '📚', name: 'textbook', x: 30, y: 80 }, { emoji: '🍎', name: 'apple', x: 50, y: 65 }, { emoji: '📏', name: 'ruler', x: 10, y: 75 }] },
+                    { id: 23, scenario: "A baker needs to bake bread. Find the yeast.", clue: { name: 'yeast', emoji: '🍞' }, target: { name: 'flour', emoji: '🌾' }, objects: [{ emoji: '🚪', name: 'pantry', x: 15, y: 50, clue: true }, { emoji: '🥖', name: 'pin', x: 60, y: 80 }, { emoji: '🧤', name: 'mitt', x: 85, y: 60 }, { emoji: '🥚', name: 'eggs', x: 40, y: 70 }] },
+                    { id: 24, scenario: "A fisherman needs bait. Find the worm.", clue: { name: 'worm', emoji: '🪱' }, target: { name: 'hook', emoji: '🪝' }, objects: [{ emoji: '🧰', name: 'tackle box', x: 25, y: 75, clue: true }, { emoji: '🥅', name: 'net', x: 70, y: 60 }, { emoji: '🧊', name: 'cooler', x: 10, y: 80 }, { emoji: '⛵', name: 'boat', x: 50, y: 50 }] },
+                    { id: 25, scenario: "An archaeologist needs to clean a fossil. Find the brush.", clue: { name: 'brush', emoji: '🖌️' }, target: { name: 'fossil', emoji: '🦴' }, objects: [{ emoji: '🛠️', name: 'kit', x: 80, y: 65, clue: true }, { emoji: '⛏️', name: 'pickaxe', x: 20, y: 70 }, { emoji: '🪣', name: 'bucket', x: 45, y: 60 }, { emoji: '🍶', name: 'canteen', x: 60, y: 85 }] },
+                    { id: 26, scenario: "A knight must defeat a dragon. Find the enchanted sword.", clue: { name: 'sword', emoji: '⚔️' }, target: { name: 'dragon', emoji: '🐉' }, objects: [{ emoji: '🗿', name: 'stone', x: 50, y: 80, clue: true }, { emoji: '🛡️', name: 'shield', x: 20, y: 65 }, { emoji: '🪖', name: 'helmet', x: 80, y: 50 }, { emoji: '🏰', name: 'castle', x: 40, y: 30 }] },
+                    { id: 27, scenario: "A chef needs to bake a cake. Find the sugar.", clue: { name: 'sugar', emoji: '🍚' }, target: { name: 'mixing bowl', emoji: '🥣' }, objects: [{ emoji: '📦', name: 'box', x: 15, y: 75, clue: true }, { emoji: '🧈', name: 'butter', x: 40, y: 80 }, { emoji: '🥛', name: 'milk', x: 65, y: 75 }, { emoji: '🥚', name: 'egg', x: 85, y: 80 }] },
+                    { id: 28, scenario: "A car has a flat tire. Find the tire iron.", clue: { name: 'tire iron', emoji: '🔧' }, target: { name: 'flat tire', emoji: '🚗' }, objects: [{ emoji: '📦', name: 'trunk', x: 80, y: 70, clue: true }, { emoji: '🧤', name: 'glove box', x: 30, y: 65 }, { emoji: '⛽', name: 'gas can', x: 10, y: 75 }] },
+                    { id: 29, scenario: "A cat is stuck in a tree. Find a ladder.", clue: { name: 'ladder', emoji: '🪜' }, target: { name: 'cat in tree', emoji: '🐈' }, objects: [{ emoji: '🏠', name: 'house', x: 20, y: 60 }, { emoji: '🚗', name: 'car', x: 75, y: 80 }, { emoji: '🏚️', name: 'garage', x: 80, y: 60, clue: true }] },
+                    {
+                        id: 30,
+                        scenario: "Craft a key to escape. Find clay, then find water to mold it.",
+                        objectives: [
+                            { clue: { name: 'clay', emoji: '🟤' }, target: { name: 'puddle', emoji: '💧' }, message: "You mixed the clay with water to make it moldable!"},
+                            { clue: { name: 'wet clay', emoji: '🧱' }, target: { name: 'lock', emoji: '🔒'}, message: "You've crafted a key and opened the lock!"}
+                        ],
+                        objects: [
+                            { emoji: '🌿', name: 'bush', x: 20, y: 70 },
+                            { emoji: '🕳️', name: 'hole with clay', x: 80, y: 80, clue: 'clay' },
+                            { emoji: '💧', name: 'puddle', x: 50, y: 85, target: 'puddle'},
+                            { emoji: '🔒', name: 'lock', x: 50, y: 40, target: 'lock' }
+                        ]
+                    },
+                    { id: 31, scenario: "A magician needs his top hat for the show.", clue: { name: 'top hat', emoji: '🎩' }, target: { name: 'rabbit', emoji: '🐰' }, objects: [{ emoji: '🪄', name: 'curtain', x: 15, y: 50, clue: true }, { emoji: '🃏', name: 'cards', x: 45, y: 80 }, { emoji: '🕊️', name: 'dove', x: 75, y: 40 }] },
+                    { id: 32, scenario: "A king needs his crown. Find it.", clue: { name: 'crown', emoji: '👑' }, target: { name: 'throne', emoji: '👑' }, objects: [{ emoji: '🏆', name: 'goblet', x: 30, y: 70 }, { emoji: '🛡️', name: 'shield', x: 70, y: 60 }, { emoji: '📦', name: 'chest', x: 80, y: 80, clue: true }] },
+                    { id: 33, scenario: "A secret agent must defuse a bomb. Find the wire cutters.", clue: { name: 'cutters', emoji: '✂️' }, target: { name: 'bomb', emoji: '💣' }, objects: [{ emoji: '💼', name: 'briefcase', x: 20, y: 75, clue: true }, { emoji: '📱', name: 'phone', x: 50, y: 80 }, { emoji: '🕶️', name: 'glasses', x: 80, y: 65 }] },
+                    { id: 34, scenario: "A skier lost their ski pole. Find it.", clue: { name: 'ski pole', emoji: '🎿' }, target: { name: 'skis', emoji: '🎿' }, objects: [{ emoji: '🛖', name: 'cabin', x: 80, y: 50 }, { emoji: '🌲', name: 'tree', x: 25, y: 60 }, { emoji: '❄️', name: 'snow', x: 40, y: 85, clue: true }] },
+                    { id: 35, scenario: "A judge needs a gavel to start the trial.", clue: { name: 'gavel', emoji: '🔨' }, target: { name: 'stand', emoji: '👨‍⚖️' }, objects: [{ emoji: '📚', name: 'book', x: 20, y: 70, clue: true }, { emoji: '🚩', name: 'flag', x: 80, y: 40 }, { emoji: '📁', name: 'files', x: 50, y: 75 }] },
+                    { id: 36, scenario: "A vampire is thirsty. Find the goblet of 'wine'.", clue: { name: 'goblet', emoji: '🍷' }, target: { name: 'vampire', emoji: '🧛' }, objects: [{ emoji: '⚰️', name: 'coffin', x: 40, y: 80 }, { emoji: '🕯️', name: 'candelabra', x: 80, y: 60, clue: true }, { emoji: '🦇', name: 'bat', x: 20, y: 30 }] },
+                    { id: 37, scenario: "A ghost hunter needs to find proof. Find the EMF meter.", clue: { name: 'EMF meter', emoji: '📟' }, target: { name: 'ghost', emoji: '👻' }, objects: [{ emoji: '🖼️', name: 'painting', x: 30, y: 50 }, { emoji: '🪑', name: 'chair', x: 70, y: 75 }, { emoji: '🎒', name: 'bag', x: 15, y: 80, clue: true }] },
+                    { id: 38, scenario: "A sailor needs a compass to navigate.", clue: { name: 'compass', emoji: '🧭' }, target: { name: 'ship wheel', emoji: '☸️' }, objects: [{ emoji: '🛢️', name: 'barrel', x: 25, y: 75 }, { emoji: '🪢', name: 'rope', x: 75, y: 80, clue: true }, { emoji: '🗺️', name: 'map', x: 50, y: 65 }] },
+                    { id: 39, scenario: "A sumo wrestler needs salt for the ritual. Find it.", clue: { name: 'salt', emoji: '🧂' }, target: { name: 'ring', emoji: '🤼' }, objects: [{ emoji: '🪣', name: 'bucket', x: 15, y: 80, clue: true }, { emoji: '🌬️', name: 'fan', x: 80, y: 60 }, { emoji: '🩴', name: 'sandals', x: 45, y: 85 }] },
+                    {
+                        id: 40,
+                        scenario: "Assemble a snowman. Find the carrot nose, then find the coal for eyes.",
+                        objectives: [
+                            { clue: { name: 'carrot', emoji: '🥕' }, target: { name: 'snowman', emoji: '⛄' }, message: "The snowman has a nose!"},
+                            { clue: { name: 'coal', emoji: '⚫' }, target: { name: 'snowman', emoji: '⛄'}, message: "Now the snowman can see! Great job!"}
+                        ],
+                        objects: [
+                            { emoji: '🚪', name: 'fridge', x: 15, y: 65, clue: 'carrot' },
+                            { emoji: '🔥', name: 'fireplace', x: 80, y: 70, clue: 'coal' },
+                            { emoji: '⛄', name: 'snowman', x: 50, y: 70, target: 'snowman'}
+                        ]
+                    },
+                    { id: 41, scenario: "A tourist wants a photo. Find the camera.", clue: { name: 'camera', emoji: '📷' }, target: { name: 'landmark', emoji: '🗽' }, objects: [{ emoji: '🏪', name: 'stand', x: 75, y: 70 }, { emoji: '🎒', name: 'backpack', x: 20, y: 80, clue: true }, { emoji: '🌭', name: 'cart', x: 45, y: 75 }] },
+                    { id: 42, scenario: "A beekeeper needs a smoker to calm the bees.", clue: { name: 'smoker', emoji: '💨' }, target: { name: 'beehive', emoji: '🐝' }, objects: [{ emoji: '🏚️', name: 'shed', x: 15, y: 60, clue: true }, { emoji: '🧥', name: 'suit', x: 80, y: 65 }, { emoji: '🍯', name: 'jar', x: 45, y: 80 }] },
+                    { id: 43, scenario: "A fortune teller needs her crystal ball.", clue: { name: 'crystal ball', emoji: '🔮' }, target: { name: 'table', emoji: '🃏' }, objects: [{ emoji: '🪟', name: 'curtains', x: 85, y: 50 }, { emoji: '📦', name: 'chest', x: 20, y: 75, clue: true }, { emoji: '💨', name: 'incense', x: 50, y: 80 }] },
+                    { id: 44, scenario: "A blacksmith needs to forge a sword. Find the hammer.", clue: { name: 'hammer', emoji: '🔨' }, target: { name: 'anvil', emoji: '🔥' }, objects: [{ emoji: '🚰', name: 'trough', x: 80, y: 80 }, { emoji: '🛠️', name: 'rack', x: 25, y: 60, clue: true }, { emoji: '💨', name: 'bellows', x: 50, y: 75 }] },
+                    { id: 45, scenario: "A scientist opened a portal. Find the device to close it.", clue: { name: 'device', emoji: '🌀' }, target: { name: 'portal', emoji: '🌀' }, objects: [{ emoji: '🖥️', name: 'console', x: 20, y: 70 }, { emoji: '🪵', name: 'table', x: 75, y: 80 }, { emoji: '🧥', name: 'coat', x: 50, y: 60, clue: true }] },
+                    {
+                        id: 46,
+                        scenario: "Make a potion. Find the frog leg, then find the eye of newt.",
+                        objectives: [
+                            { clue: { name: 'frog leg', emoji: '🐸' }, target: { name: 'cauldron', emoji: '⚗️' }, message: "One ingredient down!"},
+                            { clue: { name: 'eye of newt', emoji: '👁️' }, target: { name: 'cauldron', emoji: '⚗️'}, message: "The potion is complete!"}
+                        ],
+                        objects: [
+                            { emoji: '🏞️', name: 'pond', x: 15, y: 80, clue: 'frog leg' },
+                            { emoji: '🗄️', name: 'shelf', x: 80, y: 50, clue: 'eye of newt' },
+                            { emoji: '📖', name: 'spellbook', x: 50, y: 65},
+                            { emoji: '⚗️', name: 'cauldron', x: 50, y: 75, target: 'cauldron' }
+                        ]
+                    },
+                    { id: 47, scenario: "A lumberjack needs his trusty flannel shirt.", clue: { name: 'flannel shirt', emoji: '👕' }, target: { name: 'lumberjack', emoji: '🧔' }, objects: [{ emoji: '🛖', name: 'cabin', x: 30, y: 60 }, { emoji: '〰️', name: 'line', x: 70, y: 55, clue: true }, { emoji: '🪓', name: 'stump', x: 50, y: 80 }] },
+                    { id: 48, scenario: "A miner found gold but needs a pickaxe to get it.", clue: { name: 'pickaxe', emoji: '⛏️' }, target: { name: 'gold vein', emoji: '💰' }, objects: [{ emoji: '🛒', name: 'cart', x: 75, y: 75, clue: true }, { emoji: '🏮', name: 'lantern', x: 25, y: 65 }, { emoji: '🐦', name: 'cage', x: 50, y: 50 }] },
+                    { id: 49, scenario: "Disable the security system. Find the wire cutters.", clue: { name: 'cutters', emoji: '✂️' }, target: { name: 'panel', emoji: '🎛️' }, objects: [{ emoji: '🪑', name: 'desk', x: 25, y: 70, clue: true }, { emoji: '📷', name: 'camera', x: 80, y: 20 }, { emoji: '🚨', name: 'lasers', x: 50, y: 60 }, { emoji: '💨', name: 'vent', x: 10, y: 30 }] },
+                    {
+                        id: 50,
+                        scenario: "Launch the rocket! First, find the fuel. Then, find the ignition key.",
+                        objectives: [
+                             { clue: { name: 'fuel can', emoji: '⛽' }, target: { name: 'rocket', emoji: '🚀' }, message: "The rocket is fueled up and ready!"},
+                             { clue: { name: 'ignition key', emoji: '🔑' }, target: { name: 'control panel', emoji: '🎛️'}, message: "Ignition sequence started. Liftoff!"}
+                        ],
+                        objects: [
+                            { emoji: '📦', name: 'crates', x: 15, y: 75, clue: 'fuel can' },
+                            { emoji: '🏢', name: 'office', x: 80, y: 60, clue: 'ignition key'},
+                            { emoji: '📡', name: 'antenna', x: 30, y: 20},
+                            { emoji: '🚀', name: 'rocket', x: 50, y: 50, target: 'rocket' },
+                            { emoji: '🎛️', name: 'control panel', x: 75, y: 80, target: 'control panel' }
+                        ]
+                    }
+                ]
+            };
+
+            // --- GAME STATE ---
+            const gameState = {
+                currentLevel: 0,
+                volume: 10,
+                inventory: [],
+                selectedItem: null,
+                currentObjective: 0,
+                highestLevelUnlocked: 1,
+            };
+
+            // --- PROGRESS MANAGEMENT ---
+            function saveProgress() {
+                try {
+                    localStorage.setItem('mindCheckProgress', JSON.stringify({ highestLevel: gameState.highestLevelUnlocked }));
+                } catch (e) {
+                    console.error("Could not save progress:", e);
+                }
+            }
+
+            function loadProgress() {
+                try {
+                    const savedData = JSON.parse(localStorage.getItem('mindCheckProgress'));
+                    if (savedData && savedData.highestLevel) {
+                        gameState.highestLevelUnlocked = savedData.highestLevel;
+                    }
+                } catch (e) {
+                    console.error("Could not load progress:", e);
+                }
+                 if (gameState.highestLevelUnlocked > 1) {
+                    playButton.textContent = "Continue";
+                }
+            }
+
+            // --- MENU & NAVIGATION ---
+            function showScreen(screen) {
+                mainMenu.classList.add('hidden');
+                optionsScreen.classList.add('hidden');
+                levelSelectScreen.classList.add('hidden');
+                gameContainer.style.display = 'none';
+                screen.classList.remove('hidden');
+                if (screen === gameContainer) {
+                    gameContainer.style.display = 'flex';
+                }
+            }
+
+            playButton.addEventListener('click', () => {
+                showScreen(gameContainer);
+                renderLevel(gameState.highestLevelUnlocked - 1);
+            });
+            optionsButton.addEventListener('click', () => showScreen(optionsScreen));
+            levelSelectButton.addEventListener('click', () => {
+                populateLevelSelect();
+                showScreen(levelSelectScreen);
+            });
+            exitButton.addEventListener('click', () => {
+                if (typeof Android !== "undefined" && Android.closeApp) {
+                    Android.closeApp();
+                } else {
+                    mainMenu.innerHTML = `<h1 class="text-4xl text-center text-gray-700 game-title">Goodbye!</h1>`;
+                }
+            });
+            backButton.addEventListener('click', () => showScreen(mainMenu));
+            levelSelectBackButton.addEventListener('click', () => showScreen(mainMenu));
+            mainMenuButton.addEventListener('click', () => showScreen(mainMenu));
+
+            // ... Volume Controls ...
+            volumeUp.addEventListener('click', () => {
+                if (gameState.volume < 10) {
+                    gameState.volume++;
+                    volumeDisplay.textContent = gameState.volume;
+                }
+            });
+            volumeDown.addEventListener('click', () => {
+                if (gameState.volume > 0) {
+                    gameState.volume--;
+                    volumeDisplay.textContent = gameState.volume;
+                }
+            });
+
+            // --- CORE GAME LOGIC ---
+            function populateLevelSelect() {
+                levelGrid.innerHTML = '';
+                gameData.levels.forEach(level => {
+                    const levelButton = document.createElement('button');
+                    levelButton.classList.add('w-14', 'h-14', 'text-lg', 'font-bold', 'rounded-md', 'flex', 'items-center', 'justify-center', 'transition-all');
+                    if (level.id <= gameState.highestLevelUnlocked) {
+                        levelButton.textContent = level.id;
+                        levelButton.classList.add('menu-button');
+                        levelButton.addEventListener('click', () => {
+                            showScreen(gameContainer);
+                            renderLevel(level.id - 1);
+                        });
+                    } else {
+                        levelButton.innerHTML = '🔒';
+                        levelButton.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                        levelButton.disabled = true;
+                    }
+                    levelGrid.appendChild(levelButton);
+                });
+            }
+
+            function showMessage(text, buttonText = "Continue", onConfirm = () => {}) {
+                messageText.textContent = text;
+                const newButton = messageButton.cloneNode(true);
+                newButton.textContent = buttonText;
+                messageButton.parentNode.replaceChild(newButton, messageButton);
+                messageButton = newButton;
+
+                messageModal.classList.remove('hidden');
+
+                const clickHandler = () => {
+                    messageModal.classList.add('hidden');
+                    onConfirm();
+                    messageButton.removeEventListener('click', clickHandler);
+                };
+                messageButton.addEventListener('click', clickHandler);
+            }
+
+            function updateInventoryUI() {
+                inventoryBox.innerHTML = '';
+                if (gameState.inventory.length === 0) {
+                    inventoryBox.innerHTML = `<p id="empty-inventory-text" class="text-gray-500">Empty</p>`;
+                } else {
+                    gameState.inventory.forEach(item => {
+                        const inventoryItem = document.createElement('div');
+                        inventoryItem.classList.add('inventory-item', 'p-2', 'rounded-lg');
+                        inventoryItem.textContent = item.emoji;
+                        inventoryItem.dataset.name = item.name;
+                        if(gameState.selectedItem && gameState.selectedItem.name === item.name) {
+                            inventoryItem.classList.add('selected');
+                        }
+                        inventoryItem.addEventListener('click', () => {
+                            if (gameState.selectedItem && gameState.selectedItem.name === item.name) {
+                                gameState.selectedItem = null;
+                            } else {
+                                gameState.selectedItem = item;
+                            }
+                            updateInventoryUI();
+                        });
+                        inventoryBox.appendChild(inventoryItem);
+                    });
+                }
+            }
+
+            function advanceToNextLevel() {
+                const nextLevelIndex = gameState.currentLevel + 1;
+                if ((nextLevelIndex + 1) > gameState.highestLevelUnlocked) {
+                    gameState.highestLevelUnlocked = nextLevelIndex + 1;
+                    saveProgress();
+                }
+                renderLevel(nextLevelIndex);
+            }
+
+            function renderLevel(levelIndex) {
+                if (levelIndex >= gameData.levels.length) {
+                    showMessage("Congratulations! You've completed all 50 levels of Mind Check!", "Play Again?", () => {
+                        gameState.highestLevelUnlocked = 1;
+                        saveProgress();
+                        showScreen(mainMenu);
+                    });
+                    return;
+                }
+
+                gameState.currentLevel = levelIndex;
+                const level = gameData.levels[levelIndex];
+                gameState.inventory = [];
+                gameState.selectedItem = null;
+                gameState.currentObjective = 0;
+                updateInventoryUI();
+
+                levelDisplay.textContent = level.id;
+
+                if(level.objectives) {
+                    scenarioText.textContent = `Find the ${level.objectives[gameState.currentObjective].clue.name}.`;
+                } else {
+                    scenarioText.textContent = level.scenario;
+                }
+
+                gameScene.innerHTML = '';
+                level.objects.forEach(obj => {
+                    const objEl = document.createElement('div');
+                    objEl.classList.add('scene-object');
+                    objEl.textContent = obj.emoji;
+                    objEl.style.left = `${obj.x}%`;
+                    objEl.style.top = `${obj.y}%`;
+                    objEl.dataset.name = obj.name;
+                    objEl.addEventListener('click', () => handleObjectClick(obj, objEl, level));
+                    gameScene.appendChild(objEl);
+                });
+
+                if (!level.objectives) {
+                    const targetEl = document.createElement('div');
+                    targetEl.classList.add('scene-object');
+                    targetEl.textContent = level.target.emoji;
+                    targetEl.style.left = '50%';
+                    targetEl.style.top = '50%';
+                    targetEl.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                    targetEl.dataset.name = level.target.name;
+                    targetEl.addEventListener('click', () => handleObjectClick({ name: level.target.name }, targetEl, level));
+                    gameScene.appendChild(targetEl);
+                }
+            }
+
+            function handleObjectClick(obj, element, level) {
+                // --- Multi-objective levels ---
+                if (level.objectives) {
+                    const objective = level.objectives[gameState.currentObjective];
+                    if (obj.clue === objective.clue.name && !gameState.inventory.find(i => i.name === obj.clue)) {
+                        gameState.inventory.push(objective.clue);
+                        updateInventoryUI();
+                        element.style.display = 'none';
+                        showMessage(`You found the ${objective.clue.name}!`, "Awesome!");
+                    } else if (obj.target === objective.target.name) {
+                        if (gameState.selectedItem && gameState.selectedItem.name === objective.clue.name) {
+                             showMessage(objective.message, "Nice!", () => {
+                                gameState.inventory = gameState.inventory.filter(i => i.name !== objective.clue.name);
+                                gameState.selectedItem = null;
+                                if(objective.clue.name === 'clay'){ gameState.inventory.push({ name: 'wet clay', emoji: '🧱' }); }
+                                updateInventoryUI();
+                                gameState.currentObjective++;
+                                if (gameState.currentObjective >= level.objectives.length) {
+                                    const motd = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+                                    showMessage(motd, "Next Level", advanceToNextLevel);
+                                } else {
+                                     scenarioText.textContent = `Find the ${level.objectives[gameState.currentObjective].clue.name}.`;
+                                }
+                            });
+                        } else { showMessage("You need to use the right item here.", "Okay"); }
+                    } else { showMessage(`That's a ${obj.name}. Not what you're looking for.`, "Right..."); }
+                // --- Single-objective levels ---
+                } else {
+                    if (obj.clue && !gameState.inventory.find(item => item.name === level.clue.name)) {
+                        gameState.inventory.push(level.clue);
+                        updateInventoryUI();
+                        element.style.display = 'none';
+                        showMessage(`You found a ${level.clue.name}!`, "Got it!");
+                    } else if (obj.name === level.target.name) {
+                        if (gameState.selectedItem && gameState.selectedItem.name === level.clue.name) {
+                            const motd = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+                            showMessage(`${motd} You solved it!`, "Next Level", advanceToNextLevel);
+                        } else { showMessage(`This is the ${level.target.name}. You need to use an item.`, "Okay"); }
+                    } else { showMessage(`This is a ${obj.name}. Nothing useful.`, "Keep looking"); }
+                }
+            }
+            // Initial setup
+            loadProgress();
+        });
+    </script>
+</body>
+</html>
+
