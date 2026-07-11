@@ -12,7 +12,7 @@ The game combines fun gameplay with mental exercises to create an addictive and 
 https://play.google.com/store/apps/details?id=com.mskstudios.mindcheck
 
 ---
-
+ 
 # 🎯 Game Overview
 
 Mind Check is designed to test player concentration, reaction timing, and mental sharpness through a variety of gameplay situations. Players must stay focused, react quickly, and complete challenges while improving their performance over time.
