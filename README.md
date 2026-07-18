@@ -4,7 +4,7 @@ Mind Check is a brain-training and reflex-focused mobile game designed to challe
 
 The game combines fun gameplay with mental exercises to create an addictive and skill-based mobile experience.
 
----
+--- 
 
 # 🎮 Play the Game
 
