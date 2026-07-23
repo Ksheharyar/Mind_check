@@ -19,7 +19,7 @@ Mind Check is designed to test player concentration, reaction timing, and mental
 
 The game focuses on: 
 - 🧠 Brain-training mechanics
-- ⚡ Reflex-based gameplay
+- ⚡ Reflex-based gameplay 
 - 🎯 Focus and concentration challenges  
 - 🎮 Interactive mobile gameplay 
 - 🏆 Score progression systems
