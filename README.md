@@ -11,7 +11,7 @@ The game combines fun gameplay with mental exercises to create an addictive and 
 📱 Google Play Store:  
 https://play.google.com/store/apps/details?id=com.mskstudios.mindcheck
 
----
+--- 
  
 # 🎯 Game Overview
 
